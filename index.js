@@ -2,11 +2,17 @@ const { readFileSync } = require('fs');
 
 function gerarFaturaStr(fatura, pecas) {
 
+  // funcao query
+  function getPeca(apresentacao) {
+    return pecas[apresentacao.id];
+  }
+  
   // funcao extraida
-  function calcularTotalApresentacao(apre, peca) {
+  // remocao do parametro peca, uso de getPeca(apre)
+  function calcularTotalApresentacao(apre) {
     let total = 0;
 
-    switch (peca.tipo) {
+    switch (getPeca(apre).tipo) {
       case "tragedia":
         total = 40000;
         if (apre.audiencia > 30) {
@@ -23,7 +29,7 @@ function gerarFaturaStr(fatura, pecas) {
         break;
 
       default:
-        throw new Error(`Peça desconhecia: ${peca.tipo}`);
+        throw new Error(`Peça desconhecia: ${getPeca(apre).tipo}`);
     }
 
     return total;
@@ -36,20 +42,20 @@ function gerarFaturaStr(fatura, pecas) {
   const formato = new Intl.NumberFormat("pt-BR",{ style: "currency", currency: "BRL", minimumFractionDigits: 2}).format;
 
   for (let apre of fatura.apresentacoes) {
-    const peca = pecas[apre.id];
+    //const peca = pecas[apre.id];
 
     // o switch que estava aqui foi extraido p funcao acima
-    let total = calcularTotalApresentacao(apre, peca);
+    let total = calcularTotalApresentacao(apre); // substituicao de peca por getPeca(apre) -> apenas um parametro de chaamda
     
     // creditos para proximas contratacoes
     creditos += Math.max(apre.audiencia - 30, 0);
 
-    if (peca.tipo === "comedia") {
+    if (getPeca(apre).tipo === "comedia") {
       creditos += Math.floor(apre.audiencia / 5);
     }
     
     // mais uma linha da fatura
-    faturaStr += `  ${peca.nome}: ${formato(total / 100)} (${apre.audiencia} assentos)\n`;
+    faturaStr += `  ${getPeca(apre).nome}: ${formato(total / 100)} (${apre.audiencia} assentos)\n`;
     totalFatura += total;
   }
 
